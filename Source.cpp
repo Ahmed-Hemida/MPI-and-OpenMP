@@ -1,12 +1,13 @@
 #include <mpi.h> 
 #include<omp.h>
+#include <chrono>
 #include <stdio.h> 
 #include<fstream>
 #include<string>
-
 #include <iostream>
 using namespace std;
-#define N 5000000
+using namespace std::chrono;
+#define N 50
 int main(int argc, char* argv[])
 {
 	fstream file;
@@ -28,10 +29,10 @@ int main(int argc, char* argv[])
 
 		string filepath = "C:\\Users\\pop\\source\\repos\\par\\";
 
-		//file.open(filepath+"DNA50.txt");
+		file.open(filepath+"DNA50.txt");
 		//file.open(filepath+"DNA500.txt");
 		//file.open(filepath+"DNA50000.txt");
-	   file.open(filepath+"DNA5000000.txt");
+	   //file.open(filepath+"DNA5000000.txt");
 
 		if (file.fail())
 			cout << " error failed to open file!!!" << endl;
@@ -75,6 +76,10 @@ int main(int argc, char* argv[])
 		MPI_Scatterv(arr, sendcount, displics, MPI_CHAR, recvbuff, recvcount, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 		int nthreads, thread_id;
+		auto start = high_resolution_clock::now();
+
+		if (rank == 0)
+		 start = high_resolution_clock::now();
 #pragma omp parallel private (thread_id)
 		{
 
@@ -97,6 +102,11 @@ int main(int argc, char* argv[])
 					localcount[3]++;
 			}
 #pragma omp barrier    /* valid usage    */
+		}
+		if (rank == 0) {
+			auto stop = high_resolution_clock::now();
+			auto duration = duration_cast<microseconds>(stop - start);
+			cout << "Time taken by function: " << duration.count()   << " micro seconds" << endl;
 		}
 		for (int i = (nthreads*(sendcount[rank] / nthreads))+1; i < sendcount[rank] ; i++) {
 			//for (int i = 0; i < sendcount[0]; i++) {
